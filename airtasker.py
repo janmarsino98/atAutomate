@@ -4,7 +4,6 @@ import os
 import openai
 from openai import OpenAI
 from dotenv import load_dotenv
-import mysql.connector
 import constants as c
 import time
 
@@ -58,7 +57,7 @@ def store_tasks(tasks):
         
 def classify_tasks():
     df = pd.read_excel(c.DDBB_PATH, index_col=0)
-    resume_list = ["resume", "reesume", "resumee", " cv ", "cover letter", "application"]
+    resume_list = ["resume", "reesume", "resumee", " cv ", "cover letter", "cv ", " cv"]
     for index, row in df.iterrows():
         for word in resume_list:
             if word in row["name"].lower():
@@ -74,7 +73,10 @@ def apply_to_tasks():
         name, description, profile_name = get_task_info(row["slug"])
         text_to_write = get_openai_description(name, description, profile_name)
         price = get_task_price(name, description)
-        comment_id, response_status = send_offer(int(price), text_to_write, row["slug"], row["price"])
+        try: 
+            comment_id, response_status = send_offer(int(price), text_to_write, row["slug"], row["price"])
+        except:
+            continue
         # response_status = send_reply(
         #     task_url=row["slug"],
         #     comment_id=comment_id, 
@@ -82,9 +84,9 @@ def apply_to_tasks():
         #     img_name="cvReviews.jpg"
         #     )
         
+        df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
+        df.to_excel(c.DDBB_PATH)
         if response_status == 200:
-            df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
-            df.to_excel(c.DDBB_PATH)
             print("Applied correctly...")
         time.sleep(10)
         
@@ -103,7 +105,7 @@ def get_openai_description(name, description, profile_name):
     response = client.chat.completions.create(
         model="gpt-4o",
         messages = [
-            {"role": "system", "content": "Imagine that you are an experience freelancer who has successfully completed several jobs in webpage. You are now trying to apply for one of this tasks. I will pass you the description of the task, the name of the task and the name of the person who is offering this task. You need to return a concise text to make an offer and maximize the chances of landing that job. Your text should first greet the person who published the task, then you must present yourself as a experienced tasker on the required task and tell that person why you are the best for doing that job. Then you must let the client know that you will start working on the task as soon as you get it assigned. Finally you should invite the client to check your profile for previous reviews on similar tasks. Please remember that you have to ONLY respond with the text you would send to the user, do not add any more information or extra clarifications. Make sure not to add any placeholders either, as I previously mentioned my name is Jan so if you need to include my name you can do it. The text should have around 50 words"},
+            {"role": "system", "content": "You are an experience freelancer who has successfully completed several jobs in webpage. You are now trying to apply for one of this tasks. I will provide the description of the task, the name of the task and the name of the person who is offering this task. You need to return a concise text to make an offer and maximize the chances of landing that job. Your text should first greet the person who published the task, then you must present yourself as a experienced tasker on the required task and tell that person why you are the best for doing that job. Then you must let the client know that you will start working on the task as soon as you get it assigned. Finally you should invite the client to check your profile for previous reviews on similar tasks. Please remember that you have to ONLY respond with the text you would send to the user, do not add any more information or extra clarifications. Make sure not to add any placeholders either, as I previously mentioned my name is Jan so if you need to include my name you can do it. The text should have around 50 words"},
             {"role": "user", "content": f"The task name is: {name}. The task description is: {description}. Finally the profile name of the person that published the task is: {profile_name}"}
         ]
     )
@@ -132,7 +134,7 @@ def send_offer(price, text_to_send, task_url, task_price):
         price = task_price
     
     post_cookies = {
-        "at_sid":"c5a260d8-b5a9-4a9d-90c6-df5f786fdb53"
+        "at_sid":"9d725325-fc38-431c-9bcc-8f37bfd66a49"
     }
     payload = {
         "bid": {
@@ -157,7 +159,7 @@ def send_reply(comment_id, reply_text, task_url, img_name):
     
     post_url = base_task_url + task_url + "/comments?threaded_comments=true"
     
-    payload = {
+    payload = { 
         "comment":{
             "body":reply_text,
             "parent_comment_id":comment_id
