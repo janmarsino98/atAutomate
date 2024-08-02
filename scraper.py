@@ -6,6 +6,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import constants as c
 import time
+import helper_functions as hf
 
 load_dotenv()
 
@@ -18,9 +19,6 @@ url = "https://www.airtasker.com/api/v2/tasks?limit=8&path=tasks&threaded_commen
 url = "https://www.airtasker.com/api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true"
 base_task_url = "https://www.airtasker.com/api/v2/tasks/"
 base_comment_url = "https://www.airtasker.com/api/v2/comments/"
-headers = {
-    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-    }
 
 def scrap():
     data = get_response()
@@ -29,10 +27,8 @@ def scrap():
     classify_tasks()
     
 def get_response() -> dict:
-    r = requests.get(url, headers=headers)
-    print(r)
+    r = requests.get(url, headers=c.HEADERS)
     data = r.json()
-    print(data.keys())
     return data
 
 def get_tasks(data: dict) -> list:
@@ -42,57 +38,79 @@ def get_tasks(data: dict) -> list:
             "slug": task["slug"], 
             "name": task["name"],
             "price": task["price"],
+            "state": task["state"],
+            "bid_on": task["bid_on"],
             })
     return tasks
 
-def store_tasks(tasks):
-    df = pd.DataFrame.from_dict(tasks)
-    df["classification"] = ""
-    df["applied"] = "No"
+def store_tasks(tasks: list):
     if os.path.isfile(c.DDBB_PATH):
-        last_df = pd.read_excel(c.DDBB_PATH, index_col=0)
-        df = pd.concat([last_df, df], ignore_index=True).drop_duplicates(subset=["slug"], keep="first").reset_index(drop=True)
-    pd.DataFrame.to_excel(df, c.DDBB_PATH)
+        prev_df = pd.read_excel(c.DDBB_PATH, index_col=0)
+    else:
+        prev_df = pd.DataFrame()
         
+    tasks_to_add = tasks.copy()
+    
+    for task in tasks:
+        if not prev_df.empty and task["slug"] in prev_df["slug"].values:
+            prev_df.loc[prev_df["slug"] == task["slug"], ["price", "state", "bid_on"]] = [task["price"], task["state"], task["bid_on"]]
+            tasks_to_add.remove(task)
+            
+    new_tasks_df = pd.DataFrame.from_dict(tasks_to_add)
+
+    if not new_tasks_df.empty:
+        new_tasks_df["classification"] = ""
+        new_tasks_df["applied"] = "No"
+
+    if not prev_df.empty:
+        final_df = pd.concat([prev_df, new_tasks_df], ignore_index=True).drop_duplicates(subset=["slug"], keep="first").reset_index(drop=True)
+        
+    else:
+        final_df = new_tasks_df
+        
+    final_df.to_excel(c.DDBB_PATH)
         
 def classify_tasks():
     df = pd.read_excel(c.DDBB_PATH, index_col=0)
-    resume_list = ["resume", "reesume", "resumee", " cv ", "cover letter", "cv ", " cv"]
+    df["classification"] = df["classification"].astype(str)
+    resume_list = ["resume", "reesume", "resumee", " cv ", "cover letter", "cv ", "cv"]
     for index, row in df.iterrows():
         for word in resume_list:
             if word in row["name"].lower():
                 df.at[index, "classification"] = "CV"
-                pd.DataFrame.to_excel(df, c.DDBB_PATH)
-                continue
+    pd.DataFrame.to_excel(df, c.DDBB_PATH)
             
 def apply_to_tasks():
     df = pd.read_excel(c.DDBB_PATH, index_col=0)
     df_cv_unapplied = df[(df["classification"] == "CV") & (df["applied"] == "No")]
+    
+    if df_cv_unapplied.empty:
+        print("No jobs to apply for...")
+        return
     for index, row in df_cv_unapplied.iterrows():
-        print(row["slug"])
         name, description, profile_name = get_task_info(row["slug"])
         text_to_write = get_openai_description(name, description, profile_name)
         price = get_task_price(name, description)
         try: 
             comment_id, response_status = send_offer(int(price), text_to_write, row["slug"], row["price"])
+        
         except:
-            continue
-        # response_status = send_reply(
-        #     task_url=row["slug"],
-        #     comment_id=comment_id, 
-        #     reply_text="This are some reviews on similar task that I got from other taskers recently",
-        #     img_name="cvReviews.jpg"
-        #     )
+            response_status = 404
+            pass
         
         df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
         df.to_excel(c.DDBB_PATH)
         if response_status == 200:
             print("Applied correctly...")
+            # attach_img_to_comment(comment_id, r"C:\Users\janma\Pictures\Sample_Jobs\SampleResume1.png")
+            
+        else:
+            print("Unable to apply to this task")
         time.sleep(10)
         
 def get_task_info(task_link):
     task_url = base_task_url + task_link
-    r = requests.get(task_url, headers=headers)
+    r = requests.get(task_url, headers=c.HEADERS)
     data = r.json()
     name = data["task"]["name"]
     description = data["task"]["description"]
@@ -105,7 +123,7 @@ def get_openai_description(name, description, profile_name):
     response = client.chat.completions.create(
         model="gpt-4o",
         messages = [
-            {"role": "system", "content": "You are an experience freelancer who has successfully completed several jobs in webpage. You are now trying to apply for one of this tasks. I will provide the description of the task, the name of the task and the name of the person who is offering this task. You need to return a concise text to make an offer and maximize the chances of landing that job. Your text should first greet the person who published the task, then you must present yourself as a experienced tasker on the required task and tell that person why you are the best for doing that job. Then you must let the client know that you will start working on the task as soon as you get it assigned. Finally you should invite the client to check your profile for previous reviews on similar tasks. Please remember that you have to ONLY respond with the text you would send to the user, do not add any more information or extra clarifications. Make sure not to add any placeholders either, as I previously mentioned my name is Jan so if you need to include my name you can do it. The text should have around 50 words"},
+            {"role": "system", "content": "You are an HR manager named Jan that specialises in drafting professional and tailored resumes and cover letters for candidates. You craft high-level resumes and cover letters that are Australian ATS compliant to make sure they pass intial screening process, enhances candidate skills, qualifications and experience so the cadidate can stand out. You also offer answering selection criteria following the STAR method ensuring it is optimal for public roles. Your goal is to create texts to apply to tasks in a freelancer platform where users can publish tasks and then the taskers apply if they are interested in completing them. You must highlight your experience and advantages aswell as adapt to the task. You will know the name of the person who requested a quote for a task. The first lane should say Availability: Today · Tomorrow. You must then first greet the person, then you will explain your offer in aproximately 70 words. Finally you will say goodbye. You must mark some words in the text in bold so a user can get a summary of all the text by just reading the words in bold. Do it in markup language using ** (you should not highlight more than 1 word in a row). The text must be appealing and easy to read. To do so, ensure to use some emojis that fit with the text you are writting and you must separate the text in several paragraphs so it is visaully easier to read. Make sure there are not any placeholders in your answers, the text that you provide must be ready to send."},
             {"role": "user", "content": f"The task name is: {name}. The task description is: {description}. Finally the profile name of the person that published the task is: {profile_name}"}
         ]
     )
@@ -130,26 +148,22 @@ def get_task_price(name, description):
 def send_offer(price, text_to_send, task_url, task_price):
     post_url = base_task_url + task_url + "/bids?threaded_comments=true"
     
-    if price < task_price:
-        price = task_price
+    if price < task_price * 0.8:
+        price = int(task_price * 0.8)
     
-    post_cookies = {
-        "at_sid":"9d725325-fc38-431c-9bcc-8f37bfd66a49"
-    }
     payload = {
         "bid": {
             "price": price
         },
         "afterpay_enabled": False,
         "comment": {
-            "body": text_to_send
+            "body": hf.convert_to_unicode(text_to_send)
         }
     }
 
 
-    x = requests.post(post_url, json=payload, cookies=post_cookies, headers=headers)
+    x = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
     data = x.json()
-    print(data)
     comment_id = data["bid"]["comment_id"]
     print(x.status_code)
     return comment_id, x.status_code
@@ -166,41 +180,27 @@ def send_reply(comment_id, reply_text, task_url, img_name):
             },
         "warning_displayed":False
         }
-    post_cookies = {
-        "at_sid":"c5a260d8-b5a9-4a9d-90c6-df5f786fdb53"
-    }
-
-    x = requests.post(post_url, json=payload, cookies=post_cookies, headers=headers)
+    
+    x = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
     data = x.json()
     comment_id = data["comment"]["id"]  
     return x.status_code
-    with open(img_name, 'rb') as f:
-        img_post_url = base_comment_url + str(comment_id) + "/attachments?threaded_comments=true"
-        binary_img = f.read()
-        fields={'attachments': ('cvReviews.jpg', binary_img, 'image/jpeg')}
-    
-        img_post_headers = {
-            'Content-Type': 'multipart/form-data',
-            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            }
+
+def attach_img_to_comment(comment_id, img_path):
+    request_url = f"https://www.airtasker.com/api/v2/comments/{comment_id}/attachments?threaded_comments=true"
+
+    with open(img_path, "rb") as img:
+        files = {'attachments':img}
         
-        try:
-            y = requests.post(
-                url = img_post_url,
-                data=fields,
-                headers=img_post_headers,
-                cookies=post_cookies
-            )
-            print(y.status_code)
-            print(y.reason)
-            print(y.text)
-        
-        except requests.exceptions.RequestException as e:
-            print(f"Error en la solicitud: {e}")
+        response = requests.post(request_url, files=files, headers=c.HEADERS, cookies=c.COOKIES)
+        print(response.status_code)
 
 if __name__ == "__main__":
     while True:
+        print("Getting new tasks...")
         scrap()
         apply_to_tasks()
+        # attach_img_to_comment("137614921", r"C:\Users\janma\Pictures\reviewsResume.png")
+        # exit()
         time.sleep(30)
     print("Done")
