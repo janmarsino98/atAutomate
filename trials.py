@@ -1,31 +1,61 @@
-def bold_text(text):
-    bold_chars = {
-        'A': '𝐀', 'B': '𝐁', 'C': '𝐂', 'D': '𝐃', 'E': '𝐄', 'F': '𝐅', 'G': '𝐆',
-        'H': '𝐇', 'I': '𝐈', 'J': '𝐉', 'K': '𝐊', 'L': '𝐋', 'M': '𝐌', 'N': '𝐍',
-        'O': '𝐎', 'P': '𝐏', 'Q': '𝐐', 'R': '𝐑', 'S': '𝐒', 'T': '𝐓', 'U': '𝐔',
-        'V': '𝐕', 'W': '𝐖', 'X': '𝐗', 'Y': '𝐘', 'Z': '𝐙',
-        'a': '𝐚', 'b': '𝐛', 'c': '𝐜', 'd': '𝐝', 'e': '𝐞', 'f': '𝐟', 'g': '𝐠',
-        'h': '𝐡', 'i': '𝐢', 'j': '𝐣', 'k': '𝐤', 'l': '𝐥', 'm': '𝐦', 'n': '𝐧',
-        'o': '𝐨', 'p': '𝐩', 'q': '𝐪', 'r': '𝐫', 's': '𝐬', 't': '𝐭', 'u': '𝐮',
-        'v': '𝐯', 'w': '𝐰', 'x': '𝐱', 'y': '𝐲', 'z': '𝐳',
-        '0': '𝟎', '1': '𝟏', '2': '𝟐', '3': '𝟑', '4': '𝟒', '5': '𝟓', '6': '𝟔',
-        '7': '𝟕', '8': '𝟖', '9': '𝟗'
-    }
+import requests
+import os
+from dotenv import load_dotenv
+import constants as c
+import pandas as pd
+import random
+import uuid
+from datetime import datetime
+
+load_dotenv()
+proxy_cred = os.getenv("HTTP_PROXY")
+proxy = {
+    "http": f"http://{proxy_cred}",
+    "https": f"http://{proxy_cred}",
+}
+
+# URL de la solicitud
+url = "https://www.airtasker.com/api/client/v1/experiences/post-task/post"
+
+def post_task(title, description, price, at_sid):
+    payload = {
+    "title": title,
+    "description": description,
+    "date_type": "flexible",
+    "price": price,
+    "date": datetime.utcnow().isoformat() + 'Z',  # Generar la fecha actual en formato ISO 8601
+    "location_type": {"type": "remote"},
+    "image_urls": [],
+    "origin": "header_post_task-v1",
+    "key": str(uuid.uuid4()),  # Generar un UUID
+    "attribution_data": {},
+    "request_quote_form": []
+}
     
-    return ''.join(bold_chars.get(c, c) for c in text)
+    response = requests.post(url, json=payload, headers=c.HEADERS, proxies=proxy, cookies=c.COOKIES)
+    return response
+    
+# df = pd.read_excel("users.xlsx", index_col=0)
 
-def convert_to_unicode(string: str):
-    while "**" in string:
-        word_start = string.find("**")
-        word_end = string.find("**", word_start + 2)
-        if word_end == -1:
-            break
-        word_end += 2  # To include the ending '**'
-        bold_part = string[word_start + 2:word_end - 2]
-        bold_unicode = bold_text(bold_part)
-        string = string[:word_start] + bold_unicode + string[word_end:]
-    return string
+# at_sids = list(df["at_sid"])
 
-# Example usage
-result = convert_to_unicode("Hello **world**")
-print(result)
+
+# for _ in range(5):
+#     r = post_task(random.choice(c.RESUME_TITLES), random.choice(c.RESUME_DESCRIPTIONS), 40, random.choice(at_sids))
+#     print(r.status_code)
+
+
+def generate_random_users():
+    r = requests.get("https://randomuser.me/api/?results=20&nat=AU&password=special,8-12,number,lower")
+    data = r.json()["results"]
+    users = []
+    for user in data:
+        first_name = user["name"]["first"]
+        last_name = user["name"]["last"]
+        location = user["location"]["city"]
+        img = user["picture"]["large"]
+        users.append([first_name, last_name, location, img])
+        df = pd.DataFrame(users, columns=["First name", "Last Name", "City","img"])
+        df.to_excel("sample_profiles.xlsx")
+generate_random_users()
+    

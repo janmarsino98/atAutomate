@@ -9,6 +9,11 @@ import time
 import helper_functions as hf
 
 load_dotenv()
+PROXY_CRED = os.getenv("HTTP_PROXY")
+proxy = {
+    "http": f"http://{PROXY_CRED}",
+    "https": f"http://{PROXY_CRED}",
+}
 
 OPENAI_API_KEY = os.getenv('OPEN_AI_API_KEY')
 
@@ -27,7 +32,7 @@ def scrap():
     classify_tasks()
     
 def get_response() -> dict:
-    r = requests.get(url, headers=c.HEADERS)
+    r = requests.get(url, headers=c.HEADERS, proxies=proxy)
     data = r.json()
     return data
 
@@ -93,6 +98,8 @@ def apply_to_tasks():
         price = get_task_price(name, description)
         try: 
             comment_id, response_status = send_offer(int(price), text_to_write, row["slug"], row["price"])
+            if response_status == 200:
+                send_reply(comment_id, "Previous feedback on similar task!", row["slug"], "imgs\LandedJobChat.png")
         
         except:
             response_status = 404
@@ -110,7 +117,7 @@ def apply_to_tasks():
         
 def get_task_info(task_link):
     task_url = base_task_url + task_link
-    r = requests.get(task_url, headers=c.HEADERS)
+    r = requests.get(task_url, headers=c.HEADERS, proxies=proxy)
     data = r.json()
     name = data["task"]["name"]
     description = data["task"]["description"]
@@ -123,12 +130,11 @@ def get_openai_description(name, description, profile_name):
     response = client.chat.completions.create(
         model="gpt-4o",
         messages = [
-            {"role": "system", "content": "You are an HR manager named Jan that specialises in drafting professional and tailored resumes and cover letters for candidates. You craft high-level resumes and cover letters that are Australian ATS compliant to make sure they pass intial screening process, enhances candidate skills, qualifications and experience so the cadidate can stand out. You also offer answering selection criteria following the STAR method ensuring it is optimal for public roles. Your goal is to create texts to apply to tasks in a freelancer platform where users can publish tasks and then the taskers apply if they are interested in completing them. You must highlight your experience and advantages aswell as adapt to the task. You will know the name of the person who requested a quote for a task. The first lane should say Availability: Today · Tomorrow. You must then first greet the person, then you will explain your offer in aproximately 70 words. Finally you will say goodbye. You must mark some words in the text in bold so a user can get a summary of all the text by just reading the words in bold. Do it in markup language using ** (you should not highlight more than 1 word in a row). The text must be appealing and easy to read. To do so, ensure to use some emojis that fit with the text you are writting and you must separate the text in several paragraphs so it is visaully easier to read. Make sure there are not any placeholders in your answers, the text that you provide must be ready to send."},
+            {"role": "system", "content": f"{c.GPT_SYSTEM_PROMPT}"},
             {"role": "user", "content": f"The task name is: {name}. The task description is: {description}. Finally the profile name of the person that published the task is: {profile_name}"}
         ]
     )
     print(response.choices[0].message.content)
-    
     return response.choices[0].message.content
 
 
@@ -146,6 +152,11 @@ def get_task_price(name, description):
     return response.choices[0].message.content
 
 def send_offer(price, text_to_send, task_url, task_price):
+    proxy_cred = os.getenv("HTTP_PROXY")
+    proxy = {
+        "http": f"http://{proxy_cred}",
+        "https": f"http://{proxy_cred}",
+    }
     post_url = base_task_url + task_url + "/bids?threaded_comments=true"
     
     if price < task_price * 0.8:
@@ -157,12 +168,13 @@ def send_offer(price, text_to_send, task_url, task_price):
         },
         "afterpay_enabled": False,
         "comment": {
-            "body": hf.convert_to_unicode(text_to_send)
+            "body": text_to_send
         }
     }
 
+    print(c.COOKIES)
 
-    x = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
+    x = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS, proxies=proxy)
     data = x.json()
     comment_id = data["bid"]["comment_id"]
     print(x.status_code)
@@ -181,9 +193,10 @@ def send_reply(comment_id, reply_text, task_url, img_name):
         "warning_displayed":False
         }
     
-    x = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
+    x = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS, proxies=proxy)
     data = x.json()
-    comment_id = data["comment"]["id"]  
+    comment_id = data["comment"]["id"]
+    attach_img_to_comment(comment_id, img_name)
     return x.status_code
 
 def attach_img_to_comment(comment_id, img_path):
@@ -192,7 +205,7 @@ def attach_img_to_comment(comment_id, img_path):
     with open(img_path, "rb") as img:
         files = {'attachments':img}
         
-        response = requests.post(request_url, files=files, headers=c.HEADERS, cookies=c.COOKIES)
+        response = requests.post(request_url, files=files, headers=c.HEADERS, cookies=c.COOKIES, proxies=proxy)
         print(response.status_code)
 
 if __name__ == "__main__":
