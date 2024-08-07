@@ -32,7 +32,7 @@ def scrap():
     classify_tasks()
     
 def get_response() -> dict:
-    r = requests.get(url, headers=c.HEADERS, proxies=proxy)
+    r = requests.get(url, headers=c.HEADERS)
     data = r.json()
     return data
 
