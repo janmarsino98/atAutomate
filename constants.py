@@ -5,6 +5,12 @@ load_dotenv()
 
 AT_SID = os.getenv("MAIN_AT_SID")
 
+proxy_cred = os.getenv("HTTP_PROXY")
+PROXY = {
+    "http": f"http://{proxy_cred}",
+    "https": f"http://{proxy_cred}",
+}
+
 DDBB_PATH = "DDBB.xlsx"
 
 TARIFAS =  """ curriculum vitae: $30 \n 

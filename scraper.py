@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import constants as c
 import time
 import helper_functions as hf
+from notifications import message_new_tasks
 
 load_dotenv()
 PROXY_CRED = os.getenv("HTTP_PROXY")
@@ -112,7 +113,7 @@ def apply_to_tasks():
             # attach_img_to_comment(comment_id, r"C:\Users\janma\Pictures\Sample_Jobs\SampleResume1.png")
             
         else:
-            print("Unable to apply to this task")
+            print(f"Unable to apply to this task: {response_status}")
         time.sleep(10)
         
 def get_task_info(task_link):
@@ -215,5 +216,8 @@ if __name__ == "__main__":
         apply_to_tasks()
         # attach_img_to_comment("137614921", r"C:\Users\janma\Pictures\reviewsResume.png")
         # exit()
-        time.sleep(30)
+        time.sleep(15)
+        print("Checking for messages on new tasks!")
+        message_new_tasks()
+        time.sleep(15)
     print("Done")

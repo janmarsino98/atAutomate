@@ -74,16 +74,18 @@ def generate_new_task():
     task_info_json = json.loads(task_info_str)
     return task_info_json
 
-df = pd.read_excel("users.xlsx", index_col=0)
 
-at_sids = list(df["at_sid"])
+def post_tasks():
+    df = pd.read_excel("users.xlsx", index_col=0)
 
-for at_sid in at_sids:
-    new_task = generate_new_task()
+    at_sids = list(df["at_sid"])
 
-    post_task (
-        title=new_task["task_name"],
-        description=new_task["task_description"],
-        price=new_task["task_price"],
-        at_sid=at_sid
-    )
+    for at_sid in at_sids:
+        new_task = generate_new_task()
+
+        post_task (
+            title=new_task["task_name"],
+            description=new_task["task_description"],
+            price=new_task["task_price"],
+            at_sid=at_sid
+        )

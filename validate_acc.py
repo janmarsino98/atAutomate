@@ -12,5 +12,5 @@ proxy = {
 }
 
 
-r = requests.get("https://id.airtasker.com/u/email-verification?ticket=zK3lGqQZYwb2kOI78R35sjwfit68B1NS#", headers=c.HEADERS, proxies=proxy)
+r = requests.get("https://id.airtasker.com/u/email-verification?ticket=P6fEkptlj9dntYWtezhQZsYkJBM672St#", headers=c.HEADERS, proxies=proxy)
 print(r.status_code)
