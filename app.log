@@ -1,0 +1,112 @@
+2024-09-03 19:38:30,787 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 19:38:33,314 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 19:40:30,215 INFO:Checking for messages on new tasks.
+2024-09-03 19:40:30,792 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 19:42:50,912 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 19:42:52,975 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 19:43:14,873 INFO:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-03 19:43:15,385 INFO:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-09-03 19:43:17,207 ERROR:The code returned when trying to send the offer to task https://www.airtasker.com/api/v2/tasks/update-my-resume-and-write-a-criteria-500-words-x01j6vvx4631ysr744543y8wjye/bids?threaded_comments=true was not 200. ==> Code: 422 - Reason: Unprocessable Entity
+2024-09-03 19:54:27,637 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 19:54:30,096 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 19:54:45,261 INFO:No new jobs to apply for!
+2024-09-03 19:56:25,271 INFO:Checking for messages on new tasks.
+2024-09-03 19:56:25,885 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 19:58:05,898 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 19:58:08,861 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 19:58:23,125 INFO:No new jobs to apply for!
+2024-09-03 20:00:03,128 INFO:Checking for messages on new tasks.
+2024-09-03 20:00:03,665 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:01:43,666 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:01:45,600 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:02:00,221 INFO:No new jobs to apply for!
+2024-09-03 20:03:40,233 INFO:Checking for messages on new tasks.
+2024-09-03 20:03:41,771 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:05:21,779 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:05:30,177 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:05:44,494 INFO:No new jobs to apply for!
+2024-09-03 20:07:24,496 INFO:Checking for messages on new tasks.
+2024-09-03 20:07:25,045 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:09:05,049 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:09:06,756 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:09:21,188 INFO:No new jobs to apply for!
+2024-09-03 20:11:01,203 INFO:Checking for messages on new tasks.
+2024-09-03 20:11:02,767 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:12:42,771 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:12:50,446 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:13:05,103 INFO:No new jobs to apply for!
+2024-09-03 20:14:45,119 INFO:Checking for messages on new tasks.
+2024-09-03 20:14:45,646 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:16:25,652 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:16:28,085 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:16:42,107 INFO:No new jobs to apply for!
+2024-09-03 20:18:22,119 INFO:Checking for messages on new tasks.
+2024-09-03 20:18:22,663 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:20:02,675 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:20:05,505 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:20:20,346 INFO:No new jobs to apply for!
+2024-09-03 20:22:00,348 INFO:Checking for messages on new tasks.
+2024-09-03 20:22:00,944 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:23:40,947 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:23:43,422 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:23:57,002 INFO:No new jobs to apply for!
+2024-09-03 20:25:37,013 INFO:Checking for messages on new tasks.
+2024-09-03 20:25:37,591 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:27:17,591 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:27:20,338 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:27:34,511 INFO:No new jobs to apply for!
+2024-09-03 20:29:14,515 INFO:Checking for messages on new tasks.
+2024-09-03 20:29:15,107 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:30:55,119 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:30:57,558 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:31:11,575 INFO:No new jobs to apply for!
+2024-09-03 20:32:51,579 INFO:Checking for messages on new tasks.
+2024-09-03 20:32:52,134 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:34:32,138 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:34:33,797 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:34:47,141 INFO:No new jobs to apply for!
+2024-09-03 20:36:27,150 INFO:Checking for messages on new tasks.
+2024-09-03 20:36:28,702 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:38:08,716 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:38:10,828 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:38:25,752 INFO:No new jobs to apply for!
+2024-09-03 20:40:05,757 INFO:Checking for messages on new tasks.
+2024-09-03 20:40:06,339 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:41:46,341 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 20:41:48,061 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 20:42:01,765 INFO:No new jobs to apply for!
+2024-09-03 20:43:41,778 INFO:Checking for messages on new tasks.
+2024-09-03 20:43:42,295 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 20:45:22,295 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:02:05,553 ERROR:Error al hacer request de nuevas tareas: HTTPSConnectionPool(host='www.airtasker.com', port=443): Max retries exceeded with url: /api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true (Caused by ProxyError('Cannot connect to proxy.', RemoteDisconnected('Remote end closed connection without response')))
+2024-09-03 21:02:07,604 INFO:No new jobs to apply for!
+2024-09-03 21:03:47,619 INFO:Checking for messages on new tasks.
+2024-09-03 21:03:48,247 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 21:05:28,262 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:05:30,769 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 21:05:44,385 INFO:No new jobs to apply for!
+2024-09-03 21:07:24,400 INFO:Checking for messages on new tasks.
+2024-09-03 21:07:24,920 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 21:09:04,931 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:09:06,731 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 21:09:21,391 INFO:No new jobs to apply for!
+2024-09-03 21:11:01,397 INFO:Checking for messages on new tasks.
+2024-09-03 21:11:01,916 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 21:12:41,930 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:12:45,414 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 21:12:59,849 INFO:No new jobs to apply for!
+2024-09-03 21:14:39,855 INFO:Checking for messages on new tasks.
+2024-09-03 21:14:40,956 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 21:16:20,964 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:16:23,534 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 21:16:38,798 INFO:No new jobs to apply for!
+2024-09-03 21:18:18,811 INFO:Checking for messages on new tasks.
+2024-09-03 21:18:20,318 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 21:20:00,327 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:20:04,574 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 21:20:18,966 INFO:No new jobs to apply for!
+2024-09-03 21:21:58,979 INFO:Checking for messages on new tasks.
+2024-09-03 21:22:00,466 INFO:Iteration completed, waiting before next cycle. You can quit now!
+2024-09-03 21:23:40,479 INFO:Starting a new iteration to get tasks and apply to them.
+2024-09-03 21:23:42,678 INFO:Nuevas tareas obtenidas correctamente.
+2024-09-03 21:23:59,129 INFO:No new jobs to apply for!

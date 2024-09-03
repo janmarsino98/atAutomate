@@ -26,12 +26,12 @@ logging.basicConfig(
 )
 
 
-url = "https://www.airtasker.com/api/v2/tasks?limit=8&path=tasks&threaded_comments=true&task_states=posted%2Cassigned%2Ccompleted%2Coverdue%2Cclosed&lat=-33.907256&lon=151.207706&location_name=Zetland%20NSW%2C%20Australia&task_types=both&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&after_time=2024-06-02T21%3A09%3A31%2B10%3A00"
+url = "http://www.airtasker.com/api/v2/tasks?limit=8&path=tasks&threaded_comments=true&task_states=posted%2Cassigned%2Ccompleted%2Coverdue%2Cclosed&lat=-33.907256&lon=151.207706&location_name=Zetland%20NSW%2C%20Australia&task_types=both&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&after_time=2024-06-02T21%3A09%3A31%2B10%3A00"
 
 
-url = "https://www.airtasker.com/api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true"
-base_task_url = "https://www.airtasker.com/api/v2/tasks/"
-base_comment_url = "https://www.airtasker.com/api/v2/comments/"
+url = "http://www.airtasker.com/api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true"
+base_task_url = "http://www.airtasker.com/api/v2/tasks/"
+base_comment_url = "http://www.airtasker.com/api/v2/comments/"
 
 def scrap():
     data = get_response()
@@ -108,7 +108,7 @@ def apply_to_tasks():
     df_cv_unapplied = df[(df["classification"] == "CV") & (df["applied"] == "No")]
     
     if df_cv_unapplied.empty:
-        print("No jobs to apply for...")
+        logging.info("No new jobs to apply for!")
         return
     for index, row in df_cv_unapplied.iterrows():
         try:
@@ -154,7 +154,6 @@ def get_openai_description(name, description, profile_name):
             {"role": "user", "content": f"The task name is: {name}. The task description is: {description}. Finally the profile name of the person that published the task is: {profile_name}"}
         ]
     )
-    print(response.choices[0].message.content)
     return response.choices[0].message.content
 
 
@@ -167,7 +166,6 @@ def get_task_price(name, description):
             {"role": "user", "content": f"The task name is: {name}. The task description is {description} and my pricing list is {c.TARIFAS}"}
         ]
     )
-    print(response.choices[0].message.content)
     
     return response.choices[0].message.content
 
@@ -236,7 +234,7 @@ def send_reply(comment_id, reply_text, task_url, img_name):
     return r.status_code
 
 def attach_img_to_comment(comment_id, img_path):
-    request_url = f"https://www.airtasker.com/api/v2/comments/{comment_id}/attachments?threaded_comments=true"
+    request_url = f"http://www.airtasker.com/api/v2/comments/{comment_id}/attachments?threaded_comments=true"
     try:
         with open(img_path, "rb") as img:
             files = {'attachments':img}

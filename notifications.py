@@ -5,13 +5,13 @@ import pandas as pd
 import time
 
 def get_last_notifications():
-    url = "https://www.airtasker.com/api/client/v1/experiences/notification-feed/index?page_token="
+    url = "http://www.airtasker.com/api/client/v1/experiences/notification-feed/index?page_token="
     r = requests.get(url, headers=c.HEADERS, cookies=c.COOKIES)
     data = r.json()["data"]
     return data["notifications"]
 
 def get_task_slug(task_link_id):
-    url = f"https://www.airtasker.com/api/v2/tasks/{task_link_id}/"
+    url = f"http://www.airtasker.com/api/v2/tasks/{task_link_id}/"
     r = requests.get(url, headers=c.HEADERS)
     data = r.json()
     slug = data["task"]["slug"]
@@ -19,7 +19,7 @@ def get_task_slug(task_link_id):
 
 
 def send_message(slug, message):
-    url = f"https://www.airtasker.com/api/v2/tasks/{slug}/private_messages?threaded_comments=true"
+    url = f"http://www.airtasker.com/api/v2/tasks/{slug}/private_messages?threaded_comments=true"
     payload = {"private_message":{"body":message}}
     r = requests.post(url, json=payload,cookies=c.COOKIES, headers=c.HEADERS, proxies=c.PROXY)
     return r
