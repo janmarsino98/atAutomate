@@ -12,7 +12,7 @@ def get_last_notifications():
 
 def get_task_slug(task_link_id):
     url = f"https://www.airtasker.com/api/v2/tasks/{task_link_id}/"
-    r = requests.get(url, headers=c.HEADERS, proxies=c.PROXY, cookies=c.COOKIES)
+    r = requests.get(url, headers=c.HEADERS)
     data = r.json()
     slug = data["task"]["slug"]
     return slug

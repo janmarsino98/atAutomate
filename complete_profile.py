@@ -67,10 +67,12 @@ def generate_new_task():
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a usefull assistant that answers in json format. Make sure you only return the dictionary of the json and nothing else. Your answer will have 3 key value pairs. task_name, task_description, task_price. task_name is a string that must be the name of a task and must be at most 10 words long. task_description is a string that represents the description of a task and must be at most 25 words long. task_price is an integer that represents the price of a task. It must be between 80 and 120 depending on the amount of work required"},
-            {"role": "user", "content": "generate a new task that can be either creating a resume, modifying a resume, creating a cover letter, modify a cover letter, update linkedin profile or some of the previous options combined"}
+            {"role": "user", "content": "Generate a new task that involves creating a bot in python for automating the process of bidding in tasks in airtasker"}
         ]
     )
     task_info_str = response.choices[0].message.content
+    task_info_str = task_info_str.replace(r"json\n", "")
+    print(task_info_str)
     task_info_json = json.loads(task_info_str)
     return task_info_json
 
@@ -80,12 +82,17 @@ def post_tasks():
 
     at_sids = list(df["at_sid"])
 
-    for at_sid in at_sids:
-        new_task = generate_new_task()
+    # for at_sid in at_sids:
+    at_sid = at_sids[4]
+    new_task = generate_new_task()
 
-        post_task (
-            title=new_task["task_name"],
-            description=new_task["task_description"],
-            price=new_task["task_price"],
-            at_sid=at_sid
-        )
+    response_code, response_reason = post_task (
+        title=new_task["task_name"],
+        description=new_task["task_description"],
+        price=new_task["task_price"],
+        at_sid=at_sid
+    )
+    
+    print(response_code, response_reason)
+    
+post_tasks()
