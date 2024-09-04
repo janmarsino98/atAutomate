@@ -11,38 +11,28 @@ from notifications import message_new_tasks
 import logging
 
 load_dotenv()
-PROXY_CRED = os.getenv("HTTP_PROXY")
+proxy_cred = os.getenv("HTTP_PROXY")
 proxy = {
-    "http": f"http://{PROXY_CRED}",
-    "https": f"http://{PROXY_CRED}",
+    "http": f"http://{proxy_cred}",
+    "https": f"http://{proxy_cred}",
 }
 
 OPENAI_API_KEY = os.getenv('OPEN_AI_API_KEY')
 
-logging.basicConfig(
-    filename="app.log",
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s:%(message)s'
-)
+url = "https://www.airtasker.com/api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true"
+base_task_url = "https://www.airtasker.com/api/v2/tasks/"
+base_comment_url = "https://www.airtasker.com/api/v2/comments/"
 
-
-url = "http://www.airtasker.com/api/v2/tasks?limit=8&path=tasks&threaded_comments=true&task_states=posted%2Cassigned%2Ccompleted%2Coverdue%2Cclosed&lat=-33.907256&lon=151.207706&location_name=Zetland%20NSW%2C%20Australia&task_types=both&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&after_time=2024-06-02T21%3A09%3A31%2B10%3A00"
-
-
-url = "http://www.airtasker.com/api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true"
-base_task_url = "http://www.airtasker.com/api/v2/tasks/"
-base_comment_url = "http://www.airtasker.com/api/v2/comments/"
-
-def scrap():
-    data = get_response()
+def scrap(session):
+    data = get_response(session)
     if data:
         tasks = get_tasks(data)
         store_tasks(tasks)
         classify_tasks()
-    
-def get_response() -> dict:
+
+def get_response(session: requests.Session) -> dict:
     try:
-        r = requests.get(url, headers=c.HEADERS, proxies=proxy)
+        r = session.get(url, headers=c.HEADERS)
     except requests.exceptions.RequestException as e:
         logging.error(f"Error al hacer request de nuevas tareas: {e}")
         return None
@@ -102,8 +92,8 @@ def classify_tasks():
             if word in row["name"].lower():
                 df.at[index, "classification"] = "CV"
     pd.DataFrame.to_excel(df, c.DDBB_PATH)
-            
-def apply_to_tasks():
+
+def apply_to_tasks(session):
     df = pd.read_excel(c.DDBB_PATH, index_col=0)
     df_cv_unapplied = df[(df["classification"] == "CV") & (df["applied"] == "No")]
     
@@ -112,13 +102,13 @@ def apply_to_tasks():
         return
     for index, row in df_cv_unapplied.iterrows():
         try:
-            name, description, profile_name = get_task_info(row["slug"])
+            name, description, profile_name = get_task_info(row["slug"], session)
             text_to_write = get_openai_description(name, description, profile_name)
             price = get_task_price(name, description)
 
-            comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"])
+            comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"], session)
             if comment_id:
-                send_reply(comment_id, "Previous feedback on similar task!", row["slug"], "imgs\LandedJobChat.png")
+                send_reply(comment_id, "Previous feedback on similar task!", row["slug"], "imgs\LandedJobChat.png", session)
             
             df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
             df.to_excel(c.DDBB_PATH)
@@ -126,25 +116,6 @@ def apply_to_tasks():
             logging.error(f"Error al procesar la tarea {row['slug']} ==> Error: {e}")
         time.sleep(100)
         
-def get_task_info(task_link):
-    task_url = base_task_url + task_link
-    try:
-        r = requests.get(task_url, headers=c.HEADERS)
-    
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error al intentar extraer información de la tarea {task_url}: {e}")
-        return None
-    
-    if r.status_code != 200:
-        logging.error(f"El codigo de respuesta al intentar extraer info de la tareal {task_url} no es 200 ==> Codigo: {r.status_code} - Razon: {r.reason}")
-        return None
-    data = r.json()
-    name = data["task"]["name"]
-    description = data["task"]["description"]
-    profile_name = data["profiles"][0]["first_name"]
-    return name, description, profile_name
-        
-    
 def get_openai_description(name, description, profile_name):
     client = OpenAI(api_key=OPENAI_API_KEY)
     response = client.chat.completions.create(
@@ -168,13 +139,26 @@ def get_task_price(name, description):
     )
     
     return response.choices[0].message.content
+        
 
-def send_offer(price, text_to_send, task_url, task_price):
-    proxy_cred = os.getenv("HTTP_PROXY")
-    proxy = {
-        "http": f"http://{proxy_cred}",
-        "https": f"http://{proxy_cred}",
-    }
+def get_task_info(task_link, session: requests.Session):
+    task_url = base_task_url + task_link
+    try:
+        r = session.get(task_url, headers=c.HEADERS)
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error al intentar extraer información de la tarea {task_url}: {e}")
+        return None
+    
+    if r.status_code != 200:
+        logging.error(f"El codigo de respuesta al intentar extraer info de la tareal {task_url} no es 200 ==> Codigo: {r.status_code} - Razon: {r.reason}")
+        return None
+    data = r.json()
+    name = data["task"]["name"]
+    description = data["task"]["description"]
+    profile_name = data["profiles"][0]["first_name"]
+    return name, description, profile_name
+
+def send_offer(price, text_to_send, task_url, task_price, session: requests.Session):
     post_url = base_task_url + task_url + "/bids?threaded_comments=true"
     
     if price < task_price * 0.8:
@@ -191,7 +175,7 @@ def send_offer(price, text_to_send, task_url, task_price):
     }
 
     try:
-        r = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS, proxies=proxy)
+        r = session.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
     except requests.exceptions.RequestException as e:
         logging.error(f"Error trying to send an offer to task: {post_url}. ==> Error: {e}")
         return None
@@ -204,10 +188,8 @@ def send_offer(price, text_to_send, task_url, task_price):
     comment_id = data["bid"]["comment_id"]
     logging.info(f"La oferta a la tarea {post_url} se ha publicado correctamente!")
     return comment_id
-    
-    
-def send_reply(comment_id, reply_text, task_url, img_name):
-    
+
+def send_reply(comment_id, reply_text, task_url, img_name, session: requests.Session):
     post_url = base_task_url + task_url + "/comments?threaded_comments=true"
     
     payload = { 
@@ -218,10 +200,9 @@ def send_reply(comment_id, reply_text, task_url, img_name):
         "warning_displayed":False
         }
     try:
-        r = requests.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS, proxies=proxy)
-        
+        r = session.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error trying to send a repply to the task: {post_url}. Error: {e}")
+        logging.error(f"Error trying to send a reply to the task: {post_url}. Error: {e}")
         return None
     
     if r.status_code != 200:
@@ -230,51 +211,49 @@ def send_reply(comment_id, reply_text, task_url, img_name):
     
     data = r.json()
     comment_id = data["comment"]["id"]
-    attach_img_to_comment(comment_id, img_name)
+    attach_img_to_comment(comment_id, img_name, session)
     return r.status_code
 
-def attach_img_to_comment(comment_id, img_path):
-    request_url = f"http://www.airtasker.com/api/v2/comments/{comment_id}/attachments?threaded_comments=true"
+def attach_img_to_comment(comment_id, img_path, session: requests.Session):
+    request_url = f"https://www.airtasker.com/api/v2/comments/{comment_id}/attachments?threaded_comments=true"
     try:
         with open(img_path, "rb") as img:
             files = {'attachments':img}
-            r = requests.post(request_url, files=files, headers=c.HEADERS, cookies=c.COOKIES, proxies=proxy)
+            r = session.post(request_url, files=files, headers=c.HEADERS, cookies=c.COOKIES)
             r.raise_for_status()
             
             logging.info(f"Se ha adjuntado correctamente la imagen al comentario {request_url}")
             return r.status_code
-            
     except requests.exceptions.HTTPError as e:
         logging.error(f"HTTP Error al intentar adjuntar imagen al comentario {request_url} ==> error: {e}")
         return None
     except requests.exceptions.RequestException as e:
         logging.error(f"Error trying to add an image to comment {request_url}. ==> error: {e}")
         return None
-    
     except Exception as e:
         logging.error(f"Error inesperado al intentar adjuntar imagen al comentario {request_url} ==> Error: {e}")
         return None
 
 if __name__ == "__main__":
     while True:
-        logging.info("Starting a new iteration to get tasks and apply to them.")
-        try:
-            scrap()
-        except Exception as e:
-            logging.error(f"Error al scrapear nuevas tareas. ==> Error: {e}")
-            time.sleep(300)
-            continue
-        try:
-            apply_to_tasks()
-        except Exception as e:
-            logging.error(f"Error al intentar aplicar a tareas. ==> Error {e}")
-        # attach_img_to_comment("137614921", r"C:\Users\janma\Pictures\reviewsResume.png")
-        # exit()
-        time.sleep(100)
-        logging.info("Checking for messages on new tasks.")
-        try:
-            message_new_tasks()
-        except Exception as e:
-            logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
-        logging.info("Iteration completed, waiting before next cycle. You can quit now!")
-        time.sleep(100)
+        with requests.Session() as session:
+            session.proxies.update(proxy)
+            logging.info("Starting a new iteration to get tasks and apply to them.")
+            try:
+                scrap(session)
+            except Exception as e:
+                logging.error(f"Error al scrapear nuevas tareas. ==> Error: {e}")
+                time.sleep(300)
+                continue
+            try:
+                apply_to_tasks(session)
+            except Exception as e:
+                logging.error(f"Error al intentar aplicar a tareas. ==> Error {e}")
+            time.sleep(100)
+            logging.info("Checking for messages on new tasks.")
+            try:
+                message_new_tasks()
+            except Exception as e:
+                logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
+            logging.info("Iteration completed, waiting before next cycle. You can quit now!")
+            time.sleep(100)

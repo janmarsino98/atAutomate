@@ -3,25 +3,60 @@ import requests
 import os
 import pandas as pd
 import time
+import logging
 
 def get_last_notifications():
     url = "http://www.airtasker.com/api/client/v1/experiences/notification-feed/index?page_token="
-    r = requests.get(url, headers=c.HEADERS, cookies=c.COOKIES)
-    data = r.json()["data"]
-    return data["notifications"]
+    try:
+        r = requests.get(url, headers=c.HEADERS, cookies=c.COOKIES, proxies=c.PROXY)
+    
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error al intentar obtener las ultimas notificaciones. ==> Error: {e}")
+        return None
+    
+    if r.status_code != 200:
+        logging.error(f"No se ha obtenido un codigo de respuesta de 200 al obtener las ultimas notificaciones. ==> Codigo: {r.status_code} - Reason: {r.reason}")
+        return None
+    
+    else:
+        data = r.json()["data"]
+        logging.info("Got last notifications correctly!")
+        return data["notifications"]
 
 def get_task_slug(task_link_id):
-    url = f"http://www.airtasker.com/api/v2/tasks/{task_link_id}/"
-    r = requests.get(url, headers=c.HEADERS)
+    url = f"https://www.airtasker.com/api/v2/tasks/{task_link_id}/"
+    try:
+        r = requests.get(url, headers=c.HEADERS, proxies=c.PROXY)
+    
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error intentando obtener la tarea {url}. ==> Error: {e}")
+        return None
+        
+    if r.status_code != 200:
+        logging.error(f"Al intentar obtener la tarea {url} no se ha obtenido una respuesta 200. ==> Codigo: {r.status_code} - Reason: {r.reason}")
+        return None
+        
     data = r.json()
     slug = data["task"]["slug"]
     return slug
 
 
 def send_message(slug, message):
-    url = f"http://www.airtasker.com/api/v2/tasks/{slug}/private_messages?threaded_comments=true"
+    print("Intentando mandar mensaje a nuevas notificaciones...")
+    print(c.PROXY)
+    url = f"https://www.airtasker.com/api/v2/tasks/{slug}/private_messages?threaded_comments=true"
     payload = {"private_message":{"body":message}}
-    r = requests.post(url, json=payload,cookies=c.COOKIES, headers=c.HEADERS, proxies=c.PROXY)
+    try:
+        r = requests.post(url, json=payload,cookies=c.COOKIES, headers=c.HEADERS, proxies=c.PROXY)
+        
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error intentando enviar mensaje a una notifcacion. ==> Error: {e}")
+        return None
+    
+    if r.status_code != 200:
+        logging.error(f"No se ha mandado el mensaje a la notificaion correctamente. ==> Código: {r.status_code} - Reason: {r.reason}")
+        return None
+    
     return r
 
 def message_new_tasks():
@@ -46,3 +81,4 @@ def message_new_tasks():
     new_df = pd.DataFrame(previous_notifications, columns=["notifications"])
     new_df.to_excel("notifications.xlsx")
     return "Notifications responded!"
+
