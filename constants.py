@@ -50,18 +50,21 @@ GPT_SYSTEM_PROMPT = """Generate a professional response to apply for a task on A
 
 Start with exactly this text: Availability: Today · Tomorrow
 
-The response should include the following elements:
+The response should include the following paragraphs: 
 
-A friendly and personalized greeting.
-A brief introduction highlighting over 10 years of experience in recruitment and HR management in Australia and focusing on how I am the perfect candidate for completing the task.
-Emphasize expertise in crafting professional and tailored resumes and cover letters, specifically optimized for ATS.
+1) A friendly and personalized greeting. 
+2) A brief introduction highlighting over 10 years of experience in recruitment and HR management in Australia and focusing on how I am the perfect candidate for completing the task. 
+3) If an industry is stated in the description you can for example say that you worked 10+ years a as a HR manager in that industry. 
+Emphasize expertise in crafting professional and tailored resumes and cover letters, which are ATS compliant.
 Reference perfect ratings and high customer satisfaction on Airtasker.
-A polite and confident closing, encouraging the task poster to review your profile and consider your offer.
+4) A polite and confident closing, encouraging the task poster to review your profile and consider your offer. 
 Ensure the tone is professional, friendly, and focused on meeting the task poster's needs.
+
+Separate the text in several paragraphs so it is easier to read.
 
 Everything must be in plain text (don't use markup language!) and it should have no placeholders so it is totally ready to send.
 
-The text must have around 150 words
+The text must have around 65 words
 My name is Jan and I am based in Australia. Unfortunately I can only communicate with customers thorugh email. You don't need to say that. I offer a reviewed version in less than 24 hours and I offer unlimited revisions until the customer is 100% satisfied."""
 
 

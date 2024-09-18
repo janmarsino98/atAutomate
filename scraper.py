@@ -35,6 +35,7 @@ def get_response(session: requests.Session) -> dict:
         r = session.get(url, headers=c.HEADERS)
     except requests.exceptions.RequestException as e:
         logging.error(f"Error al hacer request de nuevas tareas: {e}")
+        time.sleep(300)
         return None
     if r.status_code == 200:
         data = r.json()
@@ -108,12 +109,14 @@ def apply_to_tasks(session):
 
             comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"], session)
             if comment_id:
-                send_reply(comment_id, "Previous feedback on similar task!", row["slug"], "imgs\LandedJobChat.png", session)
+                send_reply(comment_id, "THese are some reviews on similar tasks😊", row["slug"], "imgs\sampleWork.png", session)
             
-            df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
-            df.to_excel(c.DDBB_PATH)
+            
         except Exception as e:
             logging.error(f"Error al procesar la tarea {row['slug']} ==> Error: {e}")
+            
+        df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
+        df.to_excel(c.DDBB_PATH)
         time.sleep(100)
         
 def get_openai_description(name, description, profile_name):
@@ -150,7 +153,7 @@ def get_task_info(task_link, session: requests.Session):
         return None
     
     if r.status_code != 200:
-        logging.error(f"El codigo de respuesta al intentar extraer info de la tareal {task_url} no es 200 ==> Codigo: {r.status_code} - Razon: {r.reason}")
+        logging.error(f"El codigo de respuesta al intentar extraer info de la tarea {task_url} no es 200 ==> Codigo: {r.status_code} - Razon: {r.reason}")
         return None
     data = r.json()
     name = data["task"]["name"]
@@ -256,4 +259,4 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
             logging.info("Iteration completed, waiting before next cycle. You can quit now!")
-            time.sleep(100)
+            time.sleep(150)
