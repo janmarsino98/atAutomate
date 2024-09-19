@@ -109,7 +109,7 @@ def apply_to_tasks(session):
 
             comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"], session)
             if comment_id:
-                send_reply(comment_id, "THese are some reviews on similar tasks😊", row["slug"], "imgs\sampleWork.png", session)
+                send_reply(comment_id, "These are some reviews on similar tasks😊", row["slug"], "imgs\sampleWork.png", session)
             
             
         except Exception as e:

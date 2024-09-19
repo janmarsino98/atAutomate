@@ -76,7 +76,7 @@ def message_new_tasks():
         if assigned_task not in previous_notifications:
             previous_notifications.append(assigned_task)
             task_slug = get_task_slug(assigned_task)
-            response = send_message(task_slug, "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at janmarsinopique98@gmail.com ?")
+            response = send_message(task_slug, "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at manhenjan@gmail.com ?")
             
     new_df = pd.DataFrame(previous_notifications, columns=["notifications"])
     new_df.to_excel("notifications.xlsx")
