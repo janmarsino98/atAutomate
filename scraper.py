@@ -8,6 +8,7 @@ import constants as c
 import time
 import helper_functions as hf
 from notifications import message_new_tasks
+from users import users, User
 import logging
 
 load_dotenv()
@@ -74,7 +75,8 @@ def store_tasks(tasks: list):
 
     if not new_tasks_df.empty:
         new_tasks_df["classification"] = ""
-        new_tasks_df["applied"] = "No"
+        for user in users:
+            new_tasks_df[f"applied_{user.name}"] = "No"
 
     if not prev_df.empty:
         final_df = pd.concat([prev_df, new_tasks_df], ignore_index=True).drop_duplicates(subset=["slug"], keep="first").reset_index(drop=True)
@@ -94,9 +96,9 @@ def classify_tasks():
                 df.at[index, "classification"] = "CV"
     pd.DataFrame.to_excel(df, c.DDBB_PATH)
 
-def apply_to_tasks(session):
+def apply_to_tasks(session, user: User):
     df = pd.read_excel(c.DDBB_PATH, index_col=0)
-    df_cv_unapplied = df[(df["classification"] == "CV") & (df["applied"] == "No")]
+    df_cv_unapplied = df[(df["classification"] == "CV") & (df[f"applied_{user.name}"] == "No")]
     
     if df_cv_unapplied.empty:
         logging.info("No new jobs to apply for!")
@@ -104,40 +106,39 @@ def apply_to_tasks(session):
     for index, row in df_cv_unapplied.iterrows():
         try:
             name, description, profile_name = get_task_info(row["slug"], session)
-            text_to_write = get_openai_description(name, description, profile_name)
-            price = get_task_price(name, description)
+            text_to_write = get_openai_description(name, description, profile_name, user)
+            price = get_task_price(name, description, user)
 
-            comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"], session)
-            if comment_id:
-                send_reply(comment_id, "These are some reviews on similar tasks😊", row["slug"], "imgs\sampleWork.png", session)
-            
+            comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"], session, user.at_sid)
+            # if comment_id:
+            #     send_reply(comment_id, "These are some reviews on similar tasks😊", row["slug"], "imgs\sampleWork.png", session)
             
         except Exception as e:
             logging.error(f"Error al procesar la tarea {row['slug']} ==> Error: {e}")
             
-        df.loc[df["slug"] == row["slug"], "applied"] = "Yes"
+        df.loc[df["slug"] == row["slug"], f"applied_{user.name}"] = "Yes"
         df.to_excel(c.DDBB_PATH)
         time.sleep(100)
         
-def get_openai_description(name, description, profile_name):
+def get_openai_description(name, description, profile_name, user: User):
     client = OpenAI(api_key=OPENAI_API_KEY)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages = [
-            {"role": "system", "content": f"{c.GPT_SYSTEM_PROMPT}"},
+            {"role": "system", "content": f"{user.prompt}"},
             {"role": "user", "content": f"The task name is: {name}. The task description is: {description}. Finally the profile name of the person that published the task is: {profile_name}"}
         ]
     )
     return response.choices[0].message.content
 
 
-def get_task_price(name, description):
+def get_task_price(name, description, user:User):
     client = OpenAI(api_key=OPENAI_API_KEY)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "Act as a freelancer. I will provide you my price list, a task description and a task name. According to theese parameters you need to return me a price for the task. If you consider the task can't be related to any element in the price list just answer with the sentence 'Task could not be classified'. Else you need to answer with ONLY the price that you would assign. It is important that you don't add any other word neither the currency in your resposne, just the number"},
-            {"role": "user", "content": f"The task name is: {name}. The task description is {description} and my pricing list is {c.TARIFAS}"}
+            {"role": "user", "content": f"The task name is: {name}. The task description is {description} and my pricing list is {user.tarifas}"}
         ]
     )
     
@@ -161,8 +162,12 @@ def get_task_info(task_link, session: requests.Session):
     profile_name = data["profiles"][0]["first_name"]
     return name, description, profile_name
 
-def send_offer(price, text_to_send, task_url, task_price, session: requests.Session):
+def send_offer(price, text_to_send, task_url, task_price, session: requests.Session, at_sid:str):
     post_url = base_task_url + task_url + "/bids?threaded_comments=true"
+    
+    all_cookies = {
+        "at_sid": at_sid
+    }
     
     if price < task_price * 0.8:
         price = int(task_price * 0.8)
@@ -178,13 +183,13 @@ def send_offer(price, text_to_send, task_url, task_price, session: requests.Sess
     }
 
     try:
-        r = session.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
+        r = session.post(post_url, json=payload, cookies=all_cookies, headers=c.HEADERS)
     except requests.exceptions.RequestException as e:
         logging.error(f"Error trying to send an offer to task: {post_url}. ==> Error: {e}")
         return None
     
     if r.status_code != 200:
-        logging.error(f"The code returned when trying to send the offer to task {post_url} was not 200. ==> Code: {r.status_code} - Reason: {r.reason}")
+        logging.error(f"{user.name}: The code returned when trying to send the offer to task {post_url} was not 200. ==> Code: {r.status_code} - Reason: {r.reason}")
         return None
     
     data = r.json()
@@ -192,8 +197,12 @@ def send_offer(price, text_to_send, task_url, task_price, session: requests.Sess
     logging.info(f"La oferta a la tarea {post_url} se ha publicado correctamente!")
     return comment_id
 
-def send_reply(comment_id, reply_text, task_url, img_name, session: requests.Session):
+def send_reply(comment_id, reply_text, task_url, img_name, session: requests.Session, at_sid:str):
     post_url = base_task_url + task_url + "/comments?threaded_comments=true"
+    
+    all_cookies = {
+        "at_sid": at_sid
+    }
     
     payload = { 
         "comment":{
@@ -203,7 +212,7 @@ def send_reply(comment_id, reply_text, task_url, img_name, session: requests.Ses
         "warning_displayed":False
         }
     try:
-        r = session.post(post_url, json=payload, cookies=c.COOKIES, headers=c.HEADERS)
+        r = session.post(post_url, json=payload, cookies=all_cookies, headers=c.HEADERS)
     except requests.exceptions.RequestException as e:
         logging.error(f"Error trying to send a reply to the task: {post_url}. Error: {e}")
         return None
@@ -239,24 +248,28 @@ def attach_img_to_comment(comment_id, img_path, session: requests.Session):
 
 if __name__ == "__main__":
     while True:
-        with requests.Session() as session:
-            session.proxies.update(proxy)
-            logging.info("Starting a new iteration to get tasks and apply to them.")
-            try:
-                scrap(session)
-            except Exception as e:
-                logging.error(f"Error al scrapear nuevas tareas. ==> Error: {e}")
-                time.sleep(300)
-                continue
-            try:
-                apply_to_tasks(session)
-            except Exception as e:
-                logging.error(f"Error al intentar aplicar a tareas. ==> Error {e}")
-            time.sleep(100)
-            logging.info("Checking for messages on new tasks.")
-            try:
-                message_new_tasks()
-            except Exception as e:
-                logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
-            logging.info("Iteration completed, waiting before next cycle. You can quit now!")
-            time.sleep(150)
+        for user in users:
+            with requests.Session() as session:
+                session.proxies.update(proxy)
+                logging.info("Starting a new iteration to get tasks and apply to them.")
+                try:
+                    scrap(session)
+                except Exception as e:
+                    logging.error(f"Error al scrapear nuevas tareas. ==> Error: {e}")
+                    time.sleep(300)
+                    continue
+                try:
+                    apply_to_tasks(session, user)
+                except Exception as e:
+                    logging.error(f"Error al intentar aplicar a tareas. ==> Error {e}")
+                time.sleep(100)
+                logging.info("Checking for messages on new tasks.")
+                try:
+                    message_new_tasks()
+                except Exception as e:
+                    logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
+                    
+                logging.info(f"User {user.name} completed!")
+                time.sleep(150)
+        logging.info("Iteration completed, waiting before next cycle. You can quit now!")
+aww
