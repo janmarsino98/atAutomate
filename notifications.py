@@ -4,11 +4,17 @@ import os
 import pandas as pd
 import time
 import logging
+from users import User
 
-def get_last_notifications():
+def get_last_notifications(user: User):
     url = "http://www.airtasker.com/api/client/v1/experiences/notification-feed/index?page_token="
+    
+    all_cookies = {
+        "at_sid": user.at_sid
+    }
+    
     try:
-        r = requests.get(url, headers=c.HEADERS, cookies=c.COOKIES, proxies=c.PROXY)
+        r = requests.get(url, headers=c.HEADERS, cookies=all_cookies, proxies=c.PROXY)
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Error al intentar obtener las ultimas notificaciones. ==> Error: {e}")
@@ -41,13 +47,16 @@ def get_task_slug(task_link_id):
     return slug
 
 
-def send_message(slug, message):
-    print("Intentando mandar mensaje a nuevas notificaciones...")
-    print(c.PROXY)
+def send_message(slug, user: User):
     url = f"https://www.airtasker.com/api/v2/tasks/{slug}/private_messages?threaded_comments=true"
-    payload = {"private_message":{"body":message}}
+    
+    all_cookies = {
+        "at_sid": user.at_sid
+    }
+    
+    payload = {"private_message":{"body":user.message}}
     try:
-        r = requests.post(url, json=payload,cookies=c.COOKIES, headers=c.HEADERS, proxies=c.PROXY)
+        r = requests.post(url, json=payload,cookies=all_cookies, headers=c.HEADERS, proxies=c.PROXY)
         
     except requests.exceptions.RequestException as e:
         logging.error(f"Error intentando enviar mensaje a una notifcacion. ==> Error: {e}")
@@ -57,10 +66,11 @@ def send_message(slug, message):
         logging.error(f"No se ha mandado el mensaje a la notificaion correctamente. ==> Código: {r.status_code} - Reason: {r.reason}")
         return None
     
+    logging.info(f"{user.name} ha mandado un mensaje correctamente a {url}")
     return r
 
-def message_new_tasks():
-    notifications = get_last_notifications()
+def message_new_tasks(user: User):
+    notifications = get_last_notifications(user)
     assigned_tasks = []
     for notification in notifications:
         if "has assigned you" in notification["segments"][1]["text"]:
@@ -76,7 +86,7 @@ def message_new_tasks():
         if assigned_task not in previous_notifications:
             previous_notifications.append(assigned_task)
             task_slug = get_task_slug(assigned_task)
-            response = send_message(task_slug, "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at manhenjan@gmail.com ?")
+            response = send_message(task_slug, user)
             
     new_df = pd.DataFrame(previous_notifications, columns=["notifications"])
     new_df.to_excel("notifications.xlsx")

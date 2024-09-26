@@ -265,11 +265,10 @@ if __name__ == "__main__":
                 time.sleep(100)
                 logging.info("Checking for messages on new tasks.")
                 try:
-                    message_new_tasks()
+                    message_new_tasks(user)
                 except Exception as e:
                     logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
                     
                 logging.info(f"User {user.name} completed!")
                 time.sleep(150)
         logging.info("Iteration completed, waiting before next cycle. You can quit now!")
-aww
