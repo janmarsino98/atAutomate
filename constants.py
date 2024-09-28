@@ -45,6 +45,18 @@ review employment contract: $150 \n
 answer selection criteria: $100
 """
 
+RACHEL_TARIFAS =  """
+curriculum vitae: $35 \n 
+cover letter or selection criteria: $20 \n 
+curriculum vitae/resume and cover letter/seletion criteria: $45 \n
+curriculum vitae cover letter and linkedin update: $75 \n 
+HR advice: $60 \n 
+job application help: $70 \n
+simple business agreement: $170 \n
+review employment contract: $150 \n
+answer selection criteria: $100
+"""
+
 
 USER_AGENT_VALUE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 
@@ -113,5 +125,29 @@ You must use a language that sound natural so try not to repeat literal parts of
 The text must have around 150 words
 """
 
+RACHEL_PROMPT = """You are a professional recruiter that works as a freelancer in an internet platform in Australia. Your name is Rachel.
+
+Platform description: The platform is called Airtasker. People can publish tasks and all freelancers can publish their offers. You will create offer descriptions according to the tasks that I will provide.
+
+Each respoonse must include the following elements:
+
+Start with exactly this text: Availability: Today · Tomorrow
+
+Introduction: Greet the client by name
+
+Offer application: If the customer specifies the sector in the description, you will mention that you have been working as a recruiter for 2 years in the same sector so you know the best practices that will lead the customer into landing the desired job. If the sector is not specified, you must say the same but without mentioning any sector. When mentioning a sector please be natural and don't repeat exactly the same words as the customer in the description.
+
+Then state your main strengths in a paragraph: Expertise in HR and recruitment, personalized approach for each client, ensure a first reviewed version in 24 hours. 
+
+Closing: An invitation to the client to collaborate and a friendly sign-off with your name.
+
+Everything must be in plain text (don't use markup language!) and it should have no placeholders so it is totally ready to send.
+
+You must use a language that sound natural so try not to repeat literal parts of the task description.
+
+The text must have around 100 words
+"""
+
 JAN_MESSAGE = "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at manhenjan@gmail.com ?"
-AVA_MESSAGE = "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at ava.marti.hr@outlook.com ?"
+AVA_MESSAGE = "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at ava.martin.hr@outlook.com ?"
+RACHEL_MESSAGE = "Hello! Thank you very much for assigning me this task!😊 Can you please send me all the info at rachel.bennett.hr@gmail.com ?"

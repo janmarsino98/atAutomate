@@ -249,26 +249,27 @@ def attach_img_to_comment(comment_id, img_path, session: requests.Session):
 if __name__ == "__main__":
     while True:
         for user in users:
-            with requests.Session() as session:
-                session.proxies.update(proxy)
-                logging.info("Starting a new iteration to get tasks and apply to them.")
-                try:
-                    scrap(session)
-                except Exception as e:
-                    logging.error(f"Error al scrapear nuevas tareas. ==> Error: {e}")
-                    time.sleep(300)
-                    continue
-                try:
-                    apply_to_tasks(session, user)
-                except Exception as e:
-                    logging.error(f"Error al intentar aplicar a tareas. ==> Error {e}")
-                time.sleep(100)
-                logging.info("Checking for messages on new tasks.")
-                try:
-                    message_new_tasks(user)
-                except Exception as e:
-                    logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
-                    
-                logging.info(f"User {user.name} completed!")
-                time.sleep(150)
+            if user.name in ["Ava", "Rachel"]:
+                with requests.Session() as session:
+                    session.proxies.update(proxy)
+                    logging.info("Starting a new iteration to get tasks and apply to them.")
+                    try:
+                        scrap(session)
+                    except Exception as e:
+                        logging.error(f"Error al scrapear nuevas tareas. ==> Error: {e}")
+                        time.sleep(300)
+                        continue
+                    try:
+                        apply_to_tasks(session, user)
+                    except Exception as e:
+                        logging.error(f"Error al intentar aplicar a tareas. ==> Error {e}")
+                    time.sleep(100)
+                    logging.info("Checking for messages on new tasks.")
+                    try:
+                        message_new_tasks(user)
+                    except Exception as e:
+                        logging.error(f"Error al intentar enviar mensaje a nuevas tareas. ==> Error: {e}")
+                        
+                    logging.info(f"User {user.name} completed!")
+                    time.sleep(150)
         logging.info("Iteration completed, waiting before next cycle. You can quit now!")

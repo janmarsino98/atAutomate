@@ -5,6 +5,7 @@ import os
 load_dotenv()
 AVA_AT_SID = os.getenv("AVA_AT_SID")
 JAN_AT_SID = os.getenv("JAN_AT_SID")
+RACHEL_AT_SID = os.getenv("RACHEL_AT_SID")
 
 
 class User:
@@ -34,8 +35,18 @@ user_ava = User(
     message=c.AVA_MESSAGE
 )
 
+user_rachel = User(
+    id=3,
+    name="Rachel",
+    prompt=c.RACHEL_PROMPT,
+    tarifas=c.RACHEL_TARIFAS,
+    at_sid=RACHEL_AT_SID,
+    message=c.RACHEL_MESSAGE
+)
+
 
 users = [
     user_jan,
-    user_ava
+    user_ava,
+    user_rachel
 ]
