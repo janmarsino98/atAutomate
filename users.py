@@ -6,6 +6,8 @@ load_dotenv()
 AVA_AT_SID = os.getenv("AVA_AT_SID")
 JAN_AT_SID = os.getenv("JAN_AT_SID")
 RACHEL_AT_SID = os.getenv("RACHEL_AT_SID")
+TIM_AT_SID = os.getenv("TIM_AT_SID")
+JAY_AT_SID = os.getenv("JAY_AT_SID")
 
 
 class User:
@@ -44,9 +46,30 @@ user_rachel = User(
     message=c.RACHEL_MESSAGE
 )
 
+user_tim = User(
+    id=4,
+    name="Tim",
+    prompt=c.TIM_PROMPT,
+    tarifas=c.TIM_TARIFAS,
+    at_sid=TIM_AT_SID,
+    message=c.TIM_MESSAGE
+)
+
+user_jay = User(
+    id=5,
+    name="Jay",
+    prompt=c.JAY_PROMPT,
+    tarifas=c.JAY_TARIFAS,
+    at_sid=JAY_AT_SID,
+    message=c.JAY_MESSAGE
+)
+
+
 
 users = [
     user_jan,
     user_ava,
-    user_rachel
+    user_rachel,
+    user_tim,
+    user_jay
 ]

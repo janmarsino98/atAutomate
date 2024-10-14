@@ -10,6 +10,7 @@ import helper_functions as hf
 from notifications import message_new_tasks
 from users import users, User
 import logging
+from pymongo import MongoClient
 
 load_dotenv()
 proxy_cred = os.getenv("HTTP_PROXY")
@@ -19,18 +20,46 @@ proxy = {
 }
 
 OPENAI_API_KEY = os.getenv('OPEN_AI_API_KEY')
+MONGO_URI = os.getenv("MONGO_URI")
+
+client = MongoClient(MONGO_URI)
+db = client.get_default_database()
+users_collection = db['users']
+tasks_collection = db['tasks']
+sent_messages_collection = db['sentMessages']
 
 url = "https://www.airtasker.com/api/v2/tasks?limit=50&path=tasks&threaded_comments=true&task_states=posted&after=0&task_types=online&radius=50000&carl_ids=&disable_recommendations=false&badges=&max_price=9999&min_price=5&sort_by=posted_desc&save_filters=true"
 base_task_url = "https://www.airtasker.com/api/v2/tasks/"
 base_comment_url = "https://www.airtasker.com/api/v2/comments/"
+
+class Task:
+    def __init__(self, slug: str, name: str, price: int, state: str, bid_on: str):
+        self.slug = slug
+        self.name = name
+        self.price = price
+        self.state = state
+        self.bid_on = bid_on
+        self.classification = None
+        
+        self.created_at = None
+        self.sender_id = None
+        self.sender_last_activity = None
+        self.description = None
+        self.profile_name = None
+        
+    def set_classification(self):
+        resume_list = ["resume", "reesume", "resumee", " cv ", "cover letter", "cv ", "cv"]
+        for word in resume_list:
+            if word in self.name.lower():
+                self.classification = "CV"
+                break
 
 def scrap(session):
     data = get_response(session)
     if data:
         tasks = get_tasks(data)
         store_tasks(tasks)
-        classify_tasks()
-
+        
 def get_response(session: requests.Session) -> dict:
     try:
         r = session.get(url, headers=c.HEADERS)
@@ -46,79 +75,86 @@ def get_response(session: requests.Session) -> dict:
         logging.error(f"Código de respuesta incorrecta al hacer request de nuevas tareas: {r.status_code} - {r.reason}")
         return None
 
-def get_tasks(data: dict) -> list:
+def get_tasks(data: dict) -> list[Task]:
     tasks = []
-    for task in data["tasks"]:
-        tasks.append({
-            "slug": task["slug"], 
-            "name": task["name"],
-            "price": task["price"],
-            "state": task["state"],
-            "bid_on": task["bid_on"],
-            })
+    for task_data in data["tasks"]:
+        publisher_last_activity_at = None
+        for profile in data["profiles"]:
+            if profile["id"] == task_data["publisher_id"]:
+                publisher_last_activity_at = profile.get("last_activity_at")
+                break
+
+        task = Task(
+            slug=task_data["slug"],
+            name=task_data["name"],
+            price=task_data["price"],
+            state=task_data["state"],
+            bid_on=task_data["bid_on"]
+        )
+        # Add additional attributes to the Task instance
+        task.created_at = task_data["created_at"]
+        task.sender_id = task_data["sender_id"]
+        task.sender_last_activity = publisher_last_activity_at
+        tasks.append(task)
     return tasks
 
-def store_tasks(tasks: list):
-    if os.path.isfile(c.DDBB_PATH):
-        prev_df = pd.read_excel(c.DDBB_PATH, index_col=0)
-    else:
-        prev_df = pd.DataFrame()
-        
-    tasks_to_add = tasks.copy()
-    
+def store_tasks(tasks: list[Task]):
+    users = list(users_collection.find())
     for task in tasks:
-        if not prev_df.empty and task["slug"] in prev_df["slug"].values:
-            prev_df.loc[prev_df["slug"] == task["slug"], ["price", "state", "bid_on"]] = [task["price"], task["state"], task["bid_on"]]
-            tasks_to_add.remove(task)
+        existing_task = tasks_collection.find_one({"slug": task["slug"]})
+        if not existing_task:
+            task.set_classification()
+            task_data = task.__dict__
             
-    new_tasks_df = pd.DataFrame.from_dict(tasks_to_add)
-
-    if not new_tasks_df.empty:
-        new_tasks_df["classification"] = ""
-        for user in users:
-            new_tasks_df[f"applied_{user.name}"] = "No"
-
-    if not prev_df.empty:
-        final_df = pd.concat([prev_df, new_tasks_df], ignore_index=True).drop_duplicates(subset=["slug"], keep="first").reset_index(drop=True)
-        
-    else:
-        final_df = new_tasks_df
-        
-    final_df.to_excel(c.DDBB_PATH)
-        
-def classify_tasks():
-    df = pd.read_excel(c.DDBB_PATH, index_col=0)
-    df["classification"] = df["classification"].astype(str)
-    resume_list = ["resume", "reesume", "resumee", " cv ", "cover letter", "cv ", "cv"]
-    for index, row in df.iterrows():
-        for word in resume_list:
-            if word in row["name"].lower():
-                df.at[index, "classification"] = "CV"
-    pd.DataFrame.to_excel(df, c.DDBB_PATH)
+            for user in users:
+                user_name = user["name"]
+                task_data[f"applied_{user_name}"] = "No"
+            result = tasks_collection.insert_one(task_data)
+    logging.info("New tasks have been stored!")
 
 def apply_to_tasks(session, user: User):
-    df = pd.read_excel(c.DDBB_PATH, index_col=0)
-    df_cv_unapplied = df[(df["classification"] == "CV") & (df[f"applied_{user.name}"] == "No")]
     
-    if df_cv_unapplied.empty:
+    query = {
+        "classification": "CV",
+        f"applied_{user.name}": "No"
+    }
+    
+    unapplied_tasks_cursor = tasks_collection.find(query)
+    
+    if tasks_collection.count_documents(query) == 0:
         logging.info("No new jobs to apply for!")
         return
-    for index, row in df_cv_unapplied.iterrows():
+        
+    
+    for task_data in unapplied_tasks_cursor:
+        # Create Task instance
+        task = Task(
+            slug=task_data["slug"],
+            name=task_data["name"],
+            price=task_data["price"],
+            state=task_data["state"],
+            bid_on=task_data["bid_on"]
+        )
+        
         try:
-            name, description, profile_name = get_task_info(row["slug"], session)
+            name, description, profile_name = get_task_info(task.slug, session)
             text_to_write = get_openai_description(name, description, profile_name, user)
             price = get_task_price(name, description, user)
-
-            comment_id = send_offer(int(price), text_to_write, row["slug"], row["price"], session, user.at_sid)
-            # if comment_id:
-            #     send_reply(comment_id, "These are some reviews on similar tasks😊", row["slug"], "imgs\sampleWork.png", session)
-            
+            comment_id = send_offer(
+                int(price),
+                text_to_write,
+                task.slug,
+                task.price,
+                session,
+                user.at_sid
+            )
+            # Update the task to mark it as applied
+            tasks_collection.update_one(
+                {"slug": task.slug},
+                {"$set": {f"applied_{user.name}": "Yes"}}
+            )
         except Exception as e:
-            logging.error(f"Error al procesar la tarea {row['slug']} ==> Error: {e}")
-            
-        df.loc[df["slug"] == row["slug"], f"applied_{user.name}"] = "Yes"
-        df.to_excel(c.DDBB_PATH)
-        time.sleep(100)
+            logging.error(f"Error processing task {task.slug} ==> Error: {e}")
         
 def get_openai_description(name, description, profile_name, user: User):
     client = OpenAI(api_key=OPENAI_API_KEY)
