@@ -80,7 +80,7 @@ def get_tasks(data: dict) -> list[Task]:
     for task_data in data["tasks"]:
         publisher_last_activity_at = None
         for profile in data["profiles"]:
-            if profile["id"] == task_data["publisher_id"]:
+            if profile["id"] == task_data["sender_id"]:
                 publisher_last_activity_at = profile.get("last_activity_at")
                 break
 
@@ -101,7 +101,7 @@ def get_tasks(data: dict) -> list[Task]:
 def store_tasks(tasks: list[Task]):
     users = list(users_collection.find())
     for task in tasks:
-        existing_task = tasks_collection.find_one({"slug": task["slug"]})
+        existing_task = tasks_collection.find_one({"slug": task.slug})
         if not existing_task:
             task.set_classification()
             task_data = task.__dict__
@@ -148,13 +148,14 @@ def apply_to_tasks(session, user: User):
                 session,
                 user.at_sid
             )
-            # Update the task to mark it as applied
-            tasks_collection.update_one(
-                {"slug": task.slug},
-                {"$set": {f"applied_{user.name}": "Yes"}}
-            )
         except Exception as e:
             logging.error(f"Error processing task {task.slug} ==> Error: {e}")
+        
+        # Update the task to mark it as applied
+        tasks_collection.update_one(
+            {"slug": task.slug},
+            {"$set": {f"applied_{user.name}": "Yes"}}
+        )
         
 def get_openai_description(name, description, profile_name, user: User):
     client = OpenAI(api_key=OPENAI_API_KEY)
@@ -173,7 +174,7 @@ def get_task_price(name, description, user:User):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "Act as a freelancer. I will provide you my price list, a task description and a task name. According to theese parameters you need to return me a price for the task. If you consider the task can't be related to any element in the price list just answer with the sentence 'Task could not be classified'. Else you need to answer with ONLY the price that you would assign. It is important that you don't add any other word neither the currency in your resposne, just the number"},
+            {"role": "system", "content": "Act as a freelancer. I will provide you my price list, a task description and a task name. According to theese parameters you need to return me a price for the task. If you consider the task can't be related to any element in the price list just answer with the sentence 'Task could not be classified'. Else you need to answer with ONLY the price that you would assign. It is important that you don't add any other word neither the currency in your resposne, just the number as an integer"},
             {"role": "user", "content": f"The task name is: {name}. The task description is {description} and my pricing list is {user.tarifas}"}
         ]
     )
@@ -281,8 +282,8 @@ def attach_img_to_comment(comment_id, img_path, session: requests.Session):
     except Exception as e:
         logging.error(f"Error inesperado al intentar adjuntar imagen al comentario {request_url} ==> Error: {e}")
         return None
-
-if __name__ == "__main__":
+    
+def main_function():
     while True:
         for user in users:
             if user.name in ["Ava", "Rachel"]:
@@ -309,3 +310,12 @@ if __name__ == "__main__":
                     logging.info(f"User {user.name} completed!")
                     time.sleep(150)
         logging.info("Iteration completed, waiting before next cycle. You can quit now!")
+
+def new_main():
+    with requests.Session() as session:
+        scrap(session)
+
+if __name__ == "__main__":
+    with requests.Session() as session:
+        from users import user_ava
+        apply_to_tasks(session, user_ava)

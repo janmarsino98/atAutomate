@@ -1709,3 +1709,15 @@
 2024-10-14 21:38:36,003 INFO:Checking for messages on new tasks.
 2024-10-14 21:38:38,173 INFO:Got last notifications correctly!
 2024-10-14 21:38:38,217 INFO:User Ava completed!
+2024-10-15 22:22:02,363 INFO:Nuevas tareas obtenidas correctamente.
+2024-10-15 22:23:41,176 INFO:Nuevas tareas obtenidas correctamente.
+2024-10-15 22:24:15,966 INFO:Nuevas tareas obtenidas correctamente.
+2024-10-15 22:24:56,811 INFO:Nuevas tareas obtenidas correctamente.
+2024-10-15 22:27:09,271 INFO:Nuevas tareas obtenidas correctamente.
+2024-10-15 22:27:13,609 INFO:New tasks have been stored!
+2024-10-15 22:32:58,619 INFO:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-10-15 22:32:59,727 INFO:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-10-15 22:32:59,729 ERROR:Error processing task cv-writing-copy-typing-of-printed-text-x01ja8ckyecqqswdp056mpw5erb ==> Error: invalid literal for int() with base 10: 'Task could not be classified'
+2024-10-15 22:33:03,767 INFO:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-10-15 22:33:04,513 INFO:HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2024-10-15 22:33:08,086 INFO:La oferta a la tarea https://www.airtasker.com/api/v2/tasks/write-my-resume-and-cover-letter-x01ja7wdzrqmb28vjc2d41dwsce/bids?threaded_comments=true se ha publicado correctamente!
